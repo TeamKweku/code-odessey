@@ -94,7 +94,7 @@ func (q *Queries) ListFavoritesByBlog(ctx context.Context, arg ListFavoritesByBl
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Favorite
+	items := []Favorite{}
 	for rows.Next() {
 		var i Favorite
 		if err := rows.Scan(
@@ -111,29 +111,4 @@ func (q *Queries) ListFavoritesByBlog(ctx context.Context, arg ListFavoritesByBl
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateFavorite = `-- name: UpdateFavorite :one
-UPDATE favorites
-SET
-  updated_at = $2
-WHERE id = $1
-RETURNING id, blog_id, created_at, updated_at
-`
-
-type UpdateFavoriteParams struct {
-	ID        uuid.UUID `json:"id"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) UpdateFavorite(ctx context.Context, arg UpdateFavoriteParams) (Favorite, error) {
-	row := q.db.QueryRow(ctx, updateFavorite, arg.ID, arg.UpdatedAt)
-	var i Favorite
-	err := row.Scan(
-		&i.ID,
-		&i.BlogID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

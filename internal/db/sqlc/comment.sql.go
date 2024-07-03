@@ -89,7 +89,7 @@ func (q *Queries) ListCommentsByBlog(ctx context.Context, arg ListCommentsByBlog
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Comment
+	items := []Comment{}
 	for rows.Next() {
 		var i Comment
 		if err := rows.Scan(
@@ -112,20 +112,18 @@ func (q *Queries) ListCommentsByBlog(ctx context.Context, arg ListCommentsByBlog
 const updateComment = `-- name: UpdateComment :one
 UPDATE comments
 SET
-  body = $2,
-  updated_at = $3
+  body = $2
 WHERE id = $1
 RETURNING id, blog_id, body, created_at, updated_at
 `
 
 type UpdateCommentParams struct {
-	ID        uuid.UUID `json:"id"`
-	Body      string    `json:"body"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID   uuid.UUID `json:"id"`
+	Body string    `json:"body"`
 }
 
 func (q *Queries) UpdateComment(ctx context.Context, arg UpdateCommentParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, updateComment, arg.ID, arg.Body, arg.UpdatedAt)
+	row := q.db.QueryRow(ctx, updateComment, arg.ID, arg.Body)
 	var i Comment
 	err := row.Scan(
 		&i.ID,

@@ -7,9 +7,9 @@ package db
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createBlog = `-- name: CreateBlog :one
@@ -124,7 +124,7 @@ func (q *Queries) ListBlogs(ctx context.Context, arg ListBlogsParams) ([]Blog, e
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Blog
+	items := []Blog{}
 	for rows.Next() {
 		var i Blog
 		if err := rows.Scan(
@@ -150,35 +150,33 @@ func (q *Queries) ListBlogs(ctx context.Context, arg ListBlogsParams) ([]Blog, e
 const updateBlog = `-- name: UpdateBlog :one
 UPDATE blogs
 SET
-  title = $2,
-  slug = $3,
-  description = $4,
-  body = $5,
-  banner_image = $6,
-  updated_at = $7
-WHERE id = $1
+  title = COALESCE($1, title),
+  slug = COALESCE($2, slug),
+  description = COALESCE($3, description),
+  body = COALESCE($4, body),
+  banner_image = COALESCE($5, banner_image)
+WHERE 
+  id = $6
 RETURNING id, title, slug, description, body, banner_image, created_at, updated_at
 `
 
 type UpdateBlogParams struct {
-	ID          uuid.UUID `json:"id"`
-	Title       string    `json:"title"`
-	Slug        string    `json:"slug"`
-	Description string    `json:"description"`
-	Body        string    `json:"body"`
-	BannerImage string    `json:"banner_image"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	Title       pgtype.Text `json:"title"`
+	Slug        pgtype.Text `json:"slug"`
+	Description pgtype.Text `json:"description"`
+	Body        pgtype.Text `json:"body"`
+	BannerImage pgtype.Text `json:"banner_image"`
+	ID          uuid.UUID   `json:"id"`
 }
 
 func (q *Queries) UpdateBlog(ctx context.Context, arg UpdateBlogParams) (Blog, error) {
 	row := q.db.QueryRow(ctx, updateBlog,
-		arg.ID,
 		arg.Title,
 		arg.Slug,
 		arg.Description,
 		arg.Body,
 		arg.BannerImage,
-		arg.UpdatedAt,
+		arg.ID,
 	)
 	var i Blog
 	err := row.Scan(

@@ -21,8 +21,7 @@ OFFSET $3;
 -- name: UpdateComment :one
 UPDATE comments
 SET
-  body = $2,
-  updated_at = $3
+  body = $2
 WHERE id = $1
 RETURNING *;
 

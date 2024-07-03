@@ -19,13 +19,6 @@ ORDER BY created_at DESC
 LIMIT $2
 OFFSET $3;
 
--- name: UpdateFavorite :one
-UPDATE favorites
-SET
-  updated_at = $2
-WHERE id = $1
-RETURNING *;
-
 -- name: DeleteFavorite :exec
 DELETE FROM favorites
 WHERE id = $1;
