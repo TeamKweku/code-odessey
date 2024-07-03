@@ -33,3 +33,30 @@ CREATE INDEX ON "favorites" ("blog_id");
 ALTER TABLE "comments" ADD FOREIGN KEY ("blog_id") REFERENCES "blogs" ("id");
 
 ALTER TABLE "favorites" ADD FOREIGN KEY ("blog_id") REFERENCES "blogs" ("id");
+
+-- Function to update the updated_at column
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+   NEW.updated_at = NOW();
+   RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Trigger for blogs table
+CREATE TRIGGER update_blogs_updated_at
+BEFORE UPDATE ON blogs
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for comments table
+CREATE TRIGGER update_comments_updated_at
+BEFORE UPDATE ON comments
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger for favorites table
+CREATE TRIGGER update_favorites_updated_at
+BEFORE UPDATE ON favorites
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();

@@ -7,36 +7,20 @@ package db
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 const createFavorite = `-- name: CreateFavorite :one
 INSERT INTO favorites (
-  id,
-  blog_id,
-  created_at,
-  updated_at
+  blog_id
 ) VALUES (
-  $1, $2, $3, $4
+  $1
 ) RETURNING id, blog_id, created_at, updated_at
 `
 
-type CreateFavoriteParams struct {
-	ID        uuid.UUID `json:"id"`
-	BlogID    uuid.UUID `json:"blog_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (q *Queries) CreateFavorite(ctx context.Context, arg CreateFavoriteParams) (Favorite, error) {
-	row := q.db.QueryRow(ctx, createFavorite,
-		arg.ID,
-		arg.BlogID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-	)
+func (q *Queries) CreateFavorite(ctx context.Context, blogID uuid.UUID) (Favorite, error) {
+	row := q.db.QueryRow(ctx, createFavorite, blogID)
 	var i Favorite
 	err := row.Scan(
 		&i.ID,

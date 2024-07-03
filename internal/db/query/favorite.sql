@@ -1,11 +1,8 @@
 -- name: CreateFavorite :one
 INSERT INTO favorites (
-  id,
-  blog_id,
-  created_at,
-  updated_at
+  blog_id
 ) VALUES (
-  $1, $2, $3, $4
+  $1
 ) RETURNING *;
 
 -- name: GetFavorite :one

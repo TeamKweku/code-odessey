@@ -13,7 +13,7 @@ import (
 type Querier interface {
 	CreateBlog(ctx context.Context, arg CreateBlogParams) (Blog, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
-	CreateFavorite(ctx context.Context, arg CreateFavoriteParams) (Favorite, error)
+	CreateFavorite(ctx context.Context, blogID uuid.UUID) (Favorite, error)
 	DeleteBlog(ctx context.Context, id uuid.UUID) error
 	DeleteComment(ctx context.Context, id uuid.UUID) error
 	DeleteFavorite(ctx context.Context, id uuid.UUID) error
