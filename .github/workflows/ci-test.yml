@@ -40,7 +40,11 @@ jobs:
           which migrate
 
       - name: Run migrations
+        env:
+          DB_SOURCE: ${{ secrets.DB_SOURCE }}
         run: make migrateup
 
       - name: Test
+        env:
+          DB_SOURCE: ${{ secrets.DB_SOURCE }}
         run: make test
