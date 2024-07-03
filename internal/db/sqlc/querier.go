@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type Querier interface {
@@ -16,7 +17,9 @@ type Querier interface {
 	CreateFavorite(ctx context.Context, blogID uuid.UUID) (Favorite, error)
 	DeleteBlog(ctx context.Context, id uuid.UUID) error
 	DeleteComment(ctx context.Context, id uuid.UUID) error
+	DeleteCommentsByBlog(ctx context.Context, blogID uuid.UUID) (pgconn.CommandTag, error)
 	DeleteFavorite(ctx context.Context, id uuid.UUID) error
+	DeleteFavoritesByBlog(ctx context.Context, blogID uuid.UUID) (pgconn.CommandTag, error)
 	GetBlog(ctx context.Context, id uuid.UUID) (Blog, error)
 	GetBlogBySlug(ctx context.Context, slug string) (Blog, error)
 	GetComment(ctx context.Context, id uuid.UUID) (Comment, error)

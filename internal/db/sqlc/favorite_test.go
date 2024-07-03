@@ -9,9 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCreateFavorite(t *testing.T) {
-	blog := createRandomBlog(t)
-
+func createRandomFavorite(t *testing.T, blog Blog) Favorite {
 	favorite, err := testQueries.CreateFavorite(context.Background(), blog.ID)
 	require.NoError(t, err)
 	require.NotEmpty(t, favorite)
@@ -20,12 +18,17 @@ func TestCreateFavorite(t *testing.T) {
 	require.Equal(t, blog.ID, favorite.BlogID)
 	require.WithinDuration(t, time.Now(), favorite.CreatedAt, 2*time.Second)
 	require.True(t, favorite.UpdatedAt.IsZero())
+
+	return favorite
+}
+func TestCreateFavorite(t *testing.T) {
+	blog := createRandomBlog(t)
+	createRandomFavorite(t, blog)
 }
 
 func TestGetFavorite(t *testing.T) {
 	blog := createRandomBlog(t)
-	favorite1, err := testQueries.CreateFavorite(context.Background(), blog.ID)
-	require.NoError(t, err)
+	favorite1 := createRandomFavorite(t, blog)
 
 	favorite2, err := testQueries.GetFavorite(context.Background(), favorite1.ID)
 	require.NoError(t, err)
@@ -41,8 +44,7 @@ func TestListFavoritesByBlog(t *testing.T) {
 	blog := createRandomBlog(t)
 
 	for i := 0; i < 10; i++ {
-		_, err := testQueries.CreateFavorite(context.Background(), blog.ID)
-		require.NoError(t, err)
+		createRandomFavorite(t, blog)
 	}
 
 	arg := ListFavoritesByBlogParams{
@@ -63,10 +65,9 @@ func TestListFavoritesByBlog(t *testing.T) {
 
 func TestDeleteFavorite(t *testing.T) {
 	blog := createRandomBlog(t)
-	favorite, err := testQueries.CreateFavorite(context.Background(), blog.ID)
-	require.NoError(t, err)
+	favorite := createRandomFavorite(t, blog)
 
-	err = testQueries.DeleteFavorite(context.Background(), favorite.ID)
+	err := testQueries.DeleteFavorite(context.Background(), favorite.ID)
 	require.NoError(t, err)
 
 	deletedFavorite, err := testQueries.GetFavorite(context.Background(), favorite.ID)

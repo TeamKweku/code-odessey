@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const createFavorite = `-- name: CreateFavorite :one
@@ -39,6 +40,15 @@ WHERE id = $1
 func (q *Queries) DeleteFavorite(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteFavorite, id)
 	return err
+}
+
+const deleteFavoritesByBlog = `-- name: DeleteFavoritesByBlog :execresult
+DELETE FROM favorites
+WHERE blog_id = $1
+`
+
+func (q *Queries) DeleteFavoritesByBlog(ctx context.Context, blogID uuid.UUID) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, deleteFavoritesByBlog, blogID)
 }
 
 const getFavorite = `-- name: GetFavorite :one

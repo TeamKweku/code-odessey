@@ -28,3 +28,7 @@ RETURNING *;
 -- name: DeleteComment :exec
 DELETE FROM comments
 WHERE id = $1;
+
+-- name: DeleteCommentsByBlog :execresult
+DELETE FROM comments
+WHERE blog_id = $1;

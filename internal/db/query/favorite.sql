@@ -19,3 +19,7 @@ OFFSET $3;
 -- name: DeleteFavorite :exec
 DELETE FROM favorites
 WHERE id = $1;
+
+-- name: DeleteFavoritesByBlog :execresult
+DELETE FROM favorites
+WHERE blog_id = $1;

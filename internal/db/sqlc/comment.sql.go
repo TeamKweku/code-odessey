@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 const createComment = `-- name: CreateComment :one
@@ -49,6 +50,15 @@ WHERE id = $1
 func (q *Queries) DeleteComment(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteComment, id)
 	return err
+}
+
+const deleteCommentsByBlog = `-- name: DeleteCommentsByBlog :execresult
+DELETE FROM comments
+WHERE blog_id = $1
+`
+
+func (q *Queries) DeleteCommentsByBlog(ctx context.Context, blogID uuid.UUID) (pgconn.CommandTag, error) {
+	return q.db.Exec(ctx, deleteCommentsByBlog, blogID)
 }
 
 const getComment = `-- name: GetComment :one
