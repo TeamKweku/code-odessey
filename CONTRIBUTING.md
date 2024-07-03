@@ -41,10 +41,10 @@ git checkout -b feature/your-feature-name
 make test
 ```
 
-6. Commit your changes with a descriptive commit message.
+6. Commit your changes with a descriptive commit message using the (Conventional Commits)[https://www.conventionalcommits.org/en/v1.0.0/] format.
 
 ```bash
-git commit -m "Description of your changes"
+git commit -m "feat: Description of your changes"
 ```
 
 7. Push your branch to your forked repository.
