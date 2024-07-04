@@ -83,3 +83,37 @@ func (server *Server) getBlogByID(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, blog)
 }
+
+type listBlogsRequest struct {
+	PageID   int32 `form:"page_id" binding:"omitempty,min=1"`
+	PageSize int32 `form:"page_size" binding:"omitempty,min=5,max=10"`
+}
+
+func (server *Server) listBlogs(ctx *gin.Context) {
+	var req listBlogsRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	// setting defaults incase they are empty in query
+	if req.PageID == 0 {
+		req.PageID = 1
+	}
+	if req.PageSize == 0 {
+		req.PageSize = 10
+	}
+
+	arg := db.ListBlogsParams{
+		Limit:  req.PageSize,
+		Offset: (req.PageID - 1) * req.PageSize,
+	}
+
+	blogs, err := server.store.ListBlogs(ctx, arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, blogs)
+}

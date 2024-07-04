@@ -50,6 +50,7 @@ func (server *Server) setupRouter() {
 	// creating the post request to create a blog
 	router.POST("/blogs", server.createBlog)
 	router.GET("/blogs/:id", server.getBlogByID)
+	router.GET("/blogs", server.listBlogs)
 
 	server.router = router
 }
