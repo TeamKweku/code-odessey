@@ -28,4 +28,7 @@ tidy:
 test:
 	go test -v --cover ./...
 
+server:
+	go run cmd/code-odessey/main.go 
+
 .PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test
