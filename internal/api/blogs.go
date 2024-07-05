@@ -62,17 +62,19 @@ type getBlogByIDRequest struct {
 func (server *Server) getBlogByID(ctx *gin.Context) {
 	var req getBlogByIDRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		if err == io.EOF {
-			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("request body is empty")))
-		} else {
-			ctx.JSON(http.StatusBadRequest, errorResponse(err))
-		}
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
 		return
 	}
 
 	id, err := uuid.Parse(req.ID)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("invalid UUID format")))
+		return
+	}
+
+	// check if the UUID is nil (empty)
+	if id == uuid.Nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("invalid UUID: cannot be empty")))
 		return
 	}
 
