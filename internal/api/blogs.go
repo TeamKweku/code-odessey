@@ -62,7 +62,11 @@ type getBlogByIDRequest struct {
 func (server *Server) getBlogByID(ctx *gin.Context) {
 	var req getBlogByIDRequest
 	if err := ctx.ShouldBindUri(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		if err == io.EOF {
+			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("request body is empty")))
+		} else {
+			ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		}
 		return
 	}
 

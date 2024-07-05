@@ -31,4 +31,7 @@ test:
 server:
 	go run cmd/code-odessey/main.go 
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test
+mock:
+	mockgen -package mockdb -destination internal/db/mock/store.go github.com/teamkweku/code-odessey/internal/db/sqlc Store
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock
