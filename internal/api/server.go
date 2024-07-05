@@ -51,6 +51,8 @@ func (server *Server) setupRouter() {
 	router.POST("/blogs", server.createBlog)
 	router.GET("/blogs/:id", server.getBlogByID)
 	router.GET("/blogs", server.listBlogs)
+	router.PUT("/blogs/:id", server.updateBlog)
+	router.DELETE("/blogs/:id", server.deleteBlog)
 
 	server.router = router
 }
