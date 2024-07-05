@@ -17,6 +17,7 @@ type Querier interface {
 	CreateFavorite(ctx context.Context, blogID uuid.UUID) (Favorite, error)
 	DeleteBlog(ctx context.Context, id uuid.UUID) error
 	DeleteComment(ctx context.Context, id uuid.UUID) error
+	DeleteCommentByBlogID(ctx context.Context, arg DeleteCommentByBlogIDParams) error
 	DeleteCommentsByBlog(ctx context.Context, blogID uuid.UUID) (pgconn.CommandTag, error)
 	DeleteFavorite(ctx context.Context, id uuid.UUID) error
 	DeleteFavoritesByBlog(ctx context.Context, blogID uuid.UUID) (pgconn.CommandTag, error)
@@ -29,6 +30,7 @@ type Querier interface {
 	ListFavoritesByBlog(ctx context.Context, arg ListFavoritesByBlogParams) ([]Favorite, error)
 	UpdateBlog(ctx context.Context, arg UpdateBlogParams) (Blog, error)
 	UpdateComment(ctx context.Context, arg UpdateCommentParams) (Comment, error)
+	UpdateCommentByBlogID(ctx context.Context, arg UpdateCommentByBlogIDParams) (Comment, error)
 }
 
 var _ Querier = (*Queries)(nil)

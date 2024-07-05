@@ -7,7 +7,6 @@ package db
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -16,21 +15,19 @@ import (
 const createComment = `-- name: CreateComment :one
 INSERT INTO comments (
   blog_id,
-  body,
-  updated_at
+  body
 ) VALUES (
-  $1, $2, $3
+  $1, $2
 ) RETURNING id, blog_id, body, created_at, updated_at
 `
 
 type CreateCommentParams struct {
-	BlogID    uuid.UUID `json:"blog_id"`
-	Body      string    `json:"body"`
-	UpdatedAt time.Time `json:"updated_at"`
+	BlogID uuid.UUID `json:"blog_id"`
+	Body   string    `json:"body"`
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, createComment, arg.BlogID, arg.Body, arg.UpdatedAt)
+	row := q.db.QueryRow(ctx, createComment, arg.BlogID, arg.Body)
 	var i Comment
 	err := row.Scan(
 		&i.ID,
@@ -49,6 +46,21 @@ WHERE id = $1
 
 func (q *Queries) DeleteComment(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteComment, id)
+	return err
+}
+
+const deleteCommentByBlogID = `-- name: DeleteCommentByBlogID :exec
+DELETE FROM comments
+WHERE id = $1 AND blog_id = $2
+`
+
+type DeleteCommentByBlogIDParams struct {
+	ID     uuid.UUID `json:"id"`
+	BlogID uuid.UUID `json:"blog_id"`
+}
+
+func (q *Queries) DeleteCommentByBlogID(ctx context.Context, arg DeleteCommentByBlogIDParams) error {
+	_, err := q.db.Exec(ctx, deleteCommentByBlogID, arg.ID, arg.BlogID)
 	return err
 }
 
@@ -134,6 +146,32 @@ type UpdateCommentParams struct {
 
 func (q *Queries) UpdateComment(ctx context.Context, arg UpdateCommentParams) (Comment, error) {
 	row := q.db.QueryRow(ctx, updateComment, arg.ID, arg.Body)
+	var i Comment
+	err := row.Scan(
+		&i.ID,
+		&i.BlogID,
+		&i.Body,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const updateCommentByBlogID = `-- name: UpdateCommentByBlogID :one
+UPDATE comments
+SET body = $3
+WHERE id = $1 AND blog_id = $2
+RETURNING id, blog_id, body, created_at, updated_at
+`
+
+type UpdateCommentByBlogIDParams struct {
+	ID     uuid.UUID `json:"id"`
+	BlogID uuid.UUID `json:"blog_id"`
+	Body   string    `json:"body"`
+}
+
+func (q *Queries) UpdateCommentByBlogID(ctx context.Context, arg UpdateCommentByBlogIDParams) (Comment, error) {
+	row := q.db.QueryRow(ctx, updateCommentByBlogID, arg.ID, arg.BlogID, arg.Body)
 	var i Comment
 	err := row.Scan(
 		&i.ID,

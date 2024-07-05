@@ -1,10 +1,9 @@
 -- name: CreateComment :one
 INSERT INTO comments (
   blog_id,
-  body,
-  updated_at
+  body
 ) VALUES (
-  $1, $2, $3
+  $1, $2
 ) RETURNING *;
 
 -- name: GetComment :one
@@ -25,9 +24,19 @@ SET
 WHERE id = $1
 RETURNING *;
 
+-- name: UpdateCommentByBlogID :one
+UPDATE comments
+SET body = $3
+WHERE id = $1 AND blog_id = $2
+RETURNING *;
+
 -- name: DeleteComment :exec
 DELETE FROM comments
 WHERE id = $1;
+
+-- name: DeleteCommentByBlogID :exec
+DELETE FROM comments
+WHERE id = $1 AND blog_id = $2;
 
 -- name: DeleteCommentsByBlog :execresult
 DELETE FROM comments

@@ -54,6 +54,18 @@ func (server *Server) setupRouter() {
 	router.PUT("/blogs/:id", server.updateBlog)
 	router.DELETE("/blogs/:id", server.deleteBlog)
 
+	// Listing comments for a specific blog
+	router.GET("/blogs/:id/comments", server.listCommentsbyBlogID)
+
+	// update comment of a specific blog id
+	router.PUT("/blogs/:id/comments/:comment_id", server.updateCommentByBlogID)
+
+	router.DELETE("/blogs/:id/comments/:comment_id", server.deleteCommentByBlogID)
+
+	// creating comments
+	router.POST("/comments", server.createComment)
+	router.GET("/comments/:id", server.getCommentByID)
+
 	server.router = router
 }
 
