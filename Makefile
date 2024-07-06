@@ -19,6 +19,12 @@ migrateup:
 migratedown:
 	migrate -path internal/db/migration -database "$(DB_SOURCE)" -verbose down
 
+migrateup1:
+	migrate -path internal/db/migration -database "$(DB_SOURCE)" -verbose up 1
+
+migratedown1:
+	migrate -path internal/db/migration -database "$(DB_SOURCE)" -verbose down 1
+
 sqlc:
 	sqlc generate
 
@@ -38,4 +44,4 @@ server:
 mock:
 	mockgen -package mockdb -destination internal/db/mock/store.go github.com/teamkweku/code-odessey/internal/db/sqlc Store
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1
