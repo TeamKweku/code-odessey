@@ -151,6 +151,12 @@ func (server *Server) updateBlog(ctx *gin.Context) {
 		return
 	}
 
+	// check if the UUID is nil (empty)
+	if id == uuid.Nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("invalid UUID: cannot be empty")))
+		return
+	}
+
 	arg := db.UpdateBlogParams{
 		ID: id,
 		Title: pgtype.Text{
@@ -205,7 +211,16 @@ func (server *Server) deleteBlog(ctx *gin.Context) {
 		return
 	}
 
-	err = server.store.DeleteBlog(ctx, id)
+	if id == uuid.Nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(fmt.Errorf("invalid UUID: cannot be empty")))
+		return
+	}
+
+	arg := db.DeleteBlogTxParams{
+		ID: id,
+	}
+
+	_, err = server.store.DeleteBlogTx(ctx, arg)
 	if err != nil {
 		if errors.Is(err, db.ErrRecordNotFound) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))

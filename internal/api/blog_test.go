@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 	mockdb "github.com/teamkweku/code-odessey/internal/db/mock"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"
@@ -333,6 +334,308 @@ func TestListBlogsAPI(t *testing.T) {
 			q.Add("page_id", fmt.Sprintf("%d", tc.query.pageID))
 			q.Add("page_size", fmt.Sprintf("%d", tc.query.pageSize))
 			request.URL.RawQuery = q.Encode()
+
+			server.router.ServeHTTP(recorder, request)
+			tc.checkResponse(t, recorder)
+		})
+	}
+}
+
+// test update API
+func TestUpdateBlogAPI(t *testing.T) {
+	blog := randomBlog()
+
+	testCases := []struct {
+		name          string
+		blogID        uuid.UUID
+		body          gin.H
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name:   "StatusOK",
+			blogID: blog.ID,
+			body: gin.H{
+				"title":        "updated title",
+				"slug":         "updated-slug",
+				"description":  "updated description",
+				"body":         "updated body",
+				"banner_image": "https://example.com/updated-image.jpg",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateBlogParams{
+					ID: blog.ID,
+					Title: pgtype.Text{
+						String: "updated title",
+						Valid:  true,
+					},
+					Slug: pgtype.Text{
+						String: "updated-slug",
+						Valid:  true,
+					},
+					Description: pgtype.Text{
+						String: "updated description",
+						Valid:  true,
+					},
+					Body: pgtype.Text{
+						String: "updated body",
+						Valid:  true,
+					},
+					BannerImage: pgtype.Text{
+						String: "https://example.com/updated-image.jpg",
+						Valid:  true,
+					},
+				}
+
+				store.EXPECT().
+					UpdateBlog(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(blog, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+				requireBodyMatchBlog(t, recorder.Body, blog)
+			},
+		},
+		{
+			name:   "InvalidID",
+			blogID: uuid.UUID{},
+			body: gin.H{
+				"title":       "updated title",
+				"slug":        "updated-slug",
+				"description": "updated description",
+				"body":        "updated body",
+				"bannerImage": "updated-banner-image-url",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				// build stubs
+				store.EXPECT().
+					GetBlog(gomock.Any(), gomock.Any()).
+					Times(0)
+
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				// check response
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
+			name:   "InternalError",
+			blogID: blog.ID,
+			body: gin.H{
+				"title": "updated title",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					UpdateBlog(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.Blog{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name:   "EmptyJSONBody",
+			blogID: blog.ID,
+			body:   gin.H{},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateBlogParams{
+					ID: blog.ID,
+					// empty json body
+				}
+
+				store.EXPECT().
+					UpdateBlog(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(blog, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+				requireBodyMatchBlog(t, recorder.Body, blog)
+			},
+		},
+		{
+			name:   "EmptyJSONBody",
+			blogID: blog.ID,
+			body:   gin.H{},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateBlogParams{
+					ID: blog.ID,
+				}
+
+				store.EXPECT().
+					UpdateBlog(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(blog, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+				requireBodyMatchBlog(t, recorder.Body, blog)
+			},
+		},
+		{
+			name:   "PartialUpdate",
+			blogID: blog.ID,
+			body: gin.H{
+				"title":       "updated title",
+				"description": "updated description",
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.UpdateBlogParams{
+					ID: blog.ID,
+					Title: pgtype.Text{
+						String: "updated title",
+						Valid:  true,
+					},
+					Description: pgtype.Text{
+						String: "updated description",
+						Valid:  true,
+					},
+				}
+
+				updatedBlog := db.Blog{
+					ID:          blog.ID,
+					Title:       "updated title",
+					Slug:        blog.Slug,
+					Description: "updated description",
+					Body:        blog.Body,
+					BannerImage: blog.BannerImage,
+				}
+
+				store.EXPECT().
+					UpdateBlog(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(updatedBlog, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusOK, recorder.Code)
+				requireBodyMatchBlog(t, recorder.Body, db.Blog{
+					ID:          blog.ID,
+					Title:       "updated title",
+					Slug:        blog.Slug,
+					Description: "updated description",
+					Body:        blog.Body,
+					BannerImage: blog.BannerImage,
+				})
+			},
+		},
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := newTestServer(t, store)
+			recorder := httptest.NewRecorder()
+
+			data, err := json.Marshal(tc.body)
+			require.NoError(t, err)
+
+			url := fmt.Sprintf("/blogs/%s", tc.blogID)
+			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
+			require.NoError(t, err)
+
+			server.router.ServeHTTP(recorder, request)
+			tc.checkResponse(t, recorder)
+		})
+	}
+}
+
+func TestDeleteBlogAPI(t *testing.T) {
+	blog := randomBlog()
+
+	testCases := []struct {
+		name          string
+		blogID        uuid.UUID
+		buildStubs    func(store *mockdb.MockStore)
+		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
+	}{
+		{
+			name:   "OK",
+			blogID: blog.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				arg := db.DeleteBlogTxParams{
+					ID: blog.ID,
+				}
+				store.EXPECT().
+					DeleteBlogTx(gomock.Any(), gomock.Eq(arg)).
+					Times(1).
+					Return(db.DeleteBlogTxResult{
+						DeletedBlogID:         blog.ID,
+						DeletedCommentsCount:  5,
+						DeletedFavoritesCount: 10,
+					}, nil)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusNoContent, recorder.Code)
+				require.Empty(t, recorder.Body.String())
+			},
+		},
+		{
+			name:   "NotFound",
+			blogID: blog.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				// build stubs
+				store.EXPECT().
+					DeleteBlogTx(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.DeleteBlogTxResult{}, db.ErrRecordNotFound)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				// check response
+				require.Equal(t, http.StatusNotFound, recorder.Code)
+			},
+		},
+		{
+			name:   "InvalidUUID",
+			blogID: uuid.UUID{},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteBlogTx(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusBadRequest, recorder.Code)
+			},
+		},
+		{
+			name:   "InternalError",
+			blogID: blog.ID,
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					DeleteBlogTx(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.DeleteBlogTxResult{}, sql.ErrConnDone)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+	}
+
+	for i := range testCases {
+		tc := testCases[i]
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+
+			store := mockdb.NewMockStore(ctrl)
+			tc.buildStubs(store)
+
+			server := newTestServer(t, store)
+			recorder := httptest.NewRecorder()
+
+			url := fmt.Sprintf("/blogs/%s", tc.blogID)
+			request, err := http.NewRequest(http.MethodDelete, url, nil)
+			require.NoError(t, err)
 
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
