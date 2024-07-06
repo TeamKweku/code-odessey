@@ -1,12 +1,13 @@
 -- name: CreateBlog :one
 INSERT INTO blogs (
+  author_id,
   title,
   slug,
   description,
   body,
   banner_image
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
 ) RETURNING *;
 
 -- name: GetBlog :one

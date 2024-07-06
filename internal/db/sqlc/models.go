@@ -19,6 +19,7 @@ type Blog struct {
 	BannerImage string    `json:"banner_image"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+	AuthorID    uuid.UUID `json:"author_id"`
 }
 
 type Comment struct {
@@ -27,6 +28,7 @@ type Comment struct {
 	Body      string    `json:"body"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	UserID    uuid.UUID `json:"user_id"`
 }
 
 type Favorite struct {
@@ -34,4 +36,17 @@ type Favorite struct {
 	BlogID    uuid.UUID `json:"blog_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	UserID    uuid.UUID `json:"user_id"`
+}
+
+type User struct {
+	ID                uuid.UUID `json:"id"`
+	Username          string    `json:"username"`
+	HashedPassword    string    `json:"hashed_password"`
+	FullName          string    `json:"full_name"`
+	Email             string    `json:"email"`
+	IsEmailVerified   bool      `json:"is_email_verified"`
+	PasswordChangedAt time.Time `json:"password_changed_at"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }

@@ -12,7 +12,11 @@ import (
 )
 
 func createRandomComment(t *testing.T, blog Blog) Comment {
+	// create user
+	user := createRandomUser(t)
+
 	arg := CreateCommentParams{
+		UserID: user.ID,
 		BlogID: blog.ID,
 		Body:   utils.RandomDescription(),
 	}

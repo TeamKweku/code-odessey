@@ -1,9 +1,10 @@
 -- name: CreateComment :one
 INSERT INTO comments (
   blog_id,
+  user_id,
   body
 ) VALUES (
-  $1, $2
+  $1, $2, $3
 ) RETURNING *;
 
 -- name: GetComment :one

@@ -14,20 +14,27 @@ import (
 
 const createFavorite = `-- name: CreateFavorite :one
 INSERT INTO favorites (
-  blog_id
+  blog_id,
+  user_id
 ) VALUES (
-  $1
-) RETURNING id, blog_id, created_at, updated_at
+  $1, $2
+) RETURNING id, blog_id, created_at, updated_at, user_id
 `
 
-func (q *Queries) CreateFavorite(ctx context.Context, blogID uuid.UUID) (Favorite, error) {
-	row := q.db.QueryRow(ctx, createFavorite, blogID)
+type CreateFavoriteParams struct {
+	BlogID uuid.UUID `json:"blog_id"`
+	UserID uuid.UUID `json:"user_id"`
+}
+
+func (q *Queries) CreateFavorite(ctx context.Context, arg CreateFavoriteParams) (Favorite, error) {
+	row := q.db.QueryRow(ctx, createFavorite, arg.BlogID, arg.UserID)
 	var i Favorite
 	err := row.Scan(
 		&i.ID,
 		&i.BlogID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
 	)
 	return i, err
 }
@@ -52,7 +59,7 @@ func (q *Queries) DeleteFavoritesByBlog(ctx context.Context, blogID uuid.UUID) (
 }
 
 const getFavorite = `-- name: GetFavorite :one
-SELECT id, blog_id, created_at, updated_at FROM favorites
+SELECT id, blog_id, created_at, updated_at, user_id FROM favorites
 WHERE id = $1 LIMIT 1
 `
 
@@ -64,12 +71,13 @@ func (q *Queries) GetFavorite(ctx context.Context, id uuid.UUID) (Favorite, erro
 		&i.BlogID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
 	)
 	return i, err
 }
 
 const listFavoritesByBlog = `-- name: ListFavoritesByBlog :many
-SELECT id, blog_id, created_at, updated_at FROM favorites
+SELECT id, blog_id, created_at, updated_at, user_id FROM favorites
 WHERE blog_id = $1
 ORDER BY created_at DESC
 LIMIT $2
@@ -96,6 +104,7 @@ func (q *Queries) ListFavoritesByBlog(ctx context.Context, arg ListFavoritesByBl
 			&i.BlogID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.UserID,
 		); err != nil {
 			return nil, err
 		}

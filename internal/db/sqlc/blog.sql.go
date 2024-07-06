@@ -14,26 +14,29 @@ import (
 
 const createBlog = `-- name: CreateBlog :one
 INSERT INTO blogs (
+  author_id,
   title,
   slug,
   description,
   body,
   banner_image
 ) VALUES (
-  $1, $2, $3, $4, $5
-) RETURNING id, title, slug, description, body, banner_image, created_at, updated_at
+  $1, $2, $3, $4, $5, $6
+) RETURNING id, title, slug, description, body, banner_image, created_at, updated_at, author_id
 `
 
 type CreateBlogParams struct {
-	Title       string `json:"title"`
-	Slug        string `json:"slug"`
-	Description string `json:"description"`
-	Body        string `json:"body"`
-	BannerImage string `json:"banner_image"`
+	AuthorID    uuid.UUID `json:"author_id"`
+	Title       string    `json:"title"`
+	Slug        string    `json:"slug"`
+	Description string    `json:"description"`
+	Body        string    `json:"body"`
+	BannerImage string    `json:"banner_image"`
 }
 
 func (q *Queries) CreateBlog(ctx context.Context, arg CreateBlogParams) (Blog, error) {
 	row := q.db.QueryRow(ctx, createBlog,
+		arg.AuthorID,
 		arg.Title,
 		arg.Slug,
 		arg.Description,
@@ -50,6 +53,7 @@ func (q *Queries) CreateBlog(ctx context.Context, arg CreateBlogParams) (Blog, e
 		&i.BannerImage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.AuthorID,
 	)
 	return i, err
 }
@@ -65,7 +69,7 @@ func (q *Queries) DeleteBlog(ctx context.Context, id uuid.UUID) error {
 }
 
 const getBlog = `-- name: GetBlog :one
-SELECT id, title, slug, description, body, banner_image, created_at, updated_at FROM blogs
+SELECT id, title, slug, description, body, banner_image, created_at, updated_at, author_id FROM blogs
 WHERE id = $1 LIMIT 1
 `
 
@@ -81,12 +85,13 @@ func (q *Queries) GetBlog(ctx context.Context, id uuid.UUID) (Blog, error) {
 		&i.BannerImage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.AuthorID,
 	)
 	return i, err
 }
 
 const getBlogBySlug = `-- name: GetBlogBySlug :one
-SELECT id, title, slug, description, body, banner_image, created_at, updated_at FROM blogs
+SELECT id, title, slug, description, body, banner_image, created_at, updated_at, author_id FROM blogs
 WHERE slug = $1 LIMIT 1
 `
 
@@ -102,12 +107,13 @@ func (q *Queries) GetBlogBySlug(ctx context.Context, slug string) (Blog, error) 
 		&i.BannerImage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.AuthorID,
 	)
 	return i, err
 }
 
 const listBlogs = `-- name: ListBlogs :many
-SELECT id, title, slug, description, body, banner_image, created_at, updated_at FROM blogs
+SELECT id, title, slug, description, body, banner_image, created_at, updated_at, author_id FROM blogs
 ORDER BY created_at DESC
 LIMIT $1
 OFFSET $2
@@ -136,6 +142,7 @@ func (q *Queries) ListBlogs(ctx context.Context, arg ListBlogsParams) ([]Blog, e
 			&i.BannerImage,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.AuthorID,
 		); err != nil {
 			return nil, err
 		}
@@ -157,7 +164,7 @@ SET
   banner_image = COALESCE($5, banner_image)
 WHERE 
   id = $6
-RETURNING id, title, slug, description, body, banner_image, created_at, updated_at
+RETURNING id, title, slug, description, body, banner_image, created_at, updated_at, author_id
 `
 
 type UpdateBlogParams struct {
@@ -188,6 +195,7 @@ func (q *Queries) UpdateBlog(ctx context.Context, arg UpdateBlogParams) (Blog, e
 		&i.BannerImage,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.AuthorID,
 	)
 	return i, err
 }

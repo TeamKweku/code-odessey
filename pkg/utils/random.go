@@ -114,3 +114,9 @@ func RandomDate() time.Time {
 	days := rng.Intn(365)
 	return now.AddDate(0, 0, -days)
 }
+
+// create randomUser
+// generate a random owner name
+func RandomOwner() string {
+	return RandomString(6)
+}

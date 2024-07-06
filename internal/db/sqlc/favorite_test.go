@@ -10,7 +10,14 @@ import (
 )
 
 func createRandomFavorite(t *testing.T, blog Blog) Favorite {
-	favorite, err := testQueries.CreateFavorite(context.Background(), blog.ID)
+	// create user
+	user := createRandomUser(t)
+	arg := CreateFavoriteParams{
+		BlogID: blog.ID,
+		UserID: user.ID,
+	}
+
+	favorite, err := testQueries.CreateFavorite(context.Background(), arg)
 	require.NoError(t, err)
 	require.NotEmpty(t, favorite)
 

@@ -16,7 +16,11 @@ func createRandomBlog(t *testing.T) Blog {
 	// Capture the current time
 	now := time.Now().UTC()
 
+	// create user
+	user := createRandomUser(t)
+
 	arg := CreateBlogParams{
+		AuthorID:    user.ID,
 		Title:       utils.RandomTitle(),
 		Slug:        utils.RandomSlug() + "-" + uuid.New().String(),
 		Description: utils.RandomDescription(),

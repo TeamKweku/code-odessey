@@ -15,19 +15,21 @@ import (
 const createComment = `-- name: CreateComment :one
 INSERT INTO comments (
   blog_id,
+  user_id,
   body
 ) VALUES (
-  $1, $2
-) RETURNING id, blog_id, body, created_at, updated_at
+  $1, $2, $3
+) RETURNING id, blog_id, body, created_at, updated_at, user_id
 `
 
 type CreateCommentParams struct {
 	BlogID uuid.UUID `json:"blog_id"`
+	UserID uuid.UUID `json:"user_id"`
 	Body   string    `json:"body"`
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, createComment, arg.BlogID, arg.Body)
+	row := q.db.QueryRow(ctx, createComment, arg.BlogID, arg.UserID, arg.Body)
 	var i Comment
 	err := row.Scan(
 		&i.ID,
@@ -35,6 +37,7 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (C
 		&i.Body,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
 	)
 	return i, err
 }
@@ -74,7 +77,7 @@ func (q *Queries) DeleteCommentsByBlog(ctx context.Context, blogID uuid.UUID) (p
 }
 
 const getComment = `-- name: GetComment :one
-SELECT id, blog_id, body, created_at, updated_at FROM comments
+SELECT id, blog_id, body, created_at, updated_at, user_id FROM comments
 WHERE id = $1 LIMIT 1
 `
 
@@ -87,12 +90,13 @@ func (q *Queries) GetComment(ctx context.Context, id uuid.UUID) (Comment, error)
 		&i.Body,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
 	)
 	return i, err
 }
 
 const listCommentsByBlog = `-- name: ListCommentsByBlog :many
-SELECT id, blog_id, body, created_at, updated_at FROM comments
+SELECT id, blog_id, body, created_at, updated_at, user_id FROM comments
 WHERE blog_id = $1
 ORDER BY created_at DESC
 LIMIT $2
@@ -120,6 +124,7 @@ func (q *Queries) ListCommentsByBlog(ctx context.Context, arg ListCommentsByBlog
 			&i.Body,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.UserID,
 		); err != nil {
 			return nil, err
 		}
@@ -136,7 +141,7 @@ UPDATE comments
 SET
   body = $2
 WHERE id = $1
-RETURNING id, blog_id, body, created_at, updated_at
+RETURNING id, blog_id, body, created_at, updated_at, user_id
 `
 
 type UpdateCommentParams struct {
@@ -153,6 +158,7 @@ func (q *Queries) UpdateComment(ctx context.Context, arg UpdateCommentParams) (C
 		&i.Body,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
 	)
 	return i, err
 }
@@ -161,7 +167,7 @@ const updateCommentByBlogID = `-- name: UpdateCommentByBlogID :one
 UPDATE comments
 SET body = $3
 WHERE id = $1 AND blog_id = $2
-RETURNING id, blog_id, body, created_at, updated_at
+RETURNING id, blog_id, body, created_at, updated_at, user_id
 `
 
 type UpdateCommentByBlogIDParams struct {
@@ -179,6 +185,7 @@ func (q *Queries) UpdateCommentByBlogID(ctx context.Context, arg UpdateCommentBy
 		&i.Body,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.UserID,
 	)
 	return i, err
 }
