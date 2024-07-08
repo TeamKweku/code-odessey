@@ -27,6 +27,7 @@ type Querier interface {
 	GetComment(ctx context.Context, id uuid.UUID) (Comment, error)
 	GetFavorite(ctx context.Context, id uuid.UUID) (Favorite, error)
 	GetUser(ctx context.Context, id uuid.UUID) (User, error)
+	GetUserByUsername(ctx context.Context, username string) (User, error)
 	ListBlogs(ctx context.Context, arg ListBlogsParams) ([]Blog, error)
 	ListCommentsByBlog(ctx context.Context, arg ListCommentsByBlogParams) ([]Comment, error)
 	ListFavoritesByBlog(ctx context.Context, arg ListFavoritesByBlogParams) ([]Favorite, error)

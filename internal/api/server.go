@@ -19,6 +19,7 @@ import (
 	"github.com/go-playground/validator"
 	"github.com/teamkweku/code-odessey/config"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"
+	"github.com/teamkweku/code-odessey/internal/token"
 )
 
 // Server encapsulates the db, Engine, config
@@ -26,16 +27,24 @@ import (
 // Engine helps send api request to correct handler for
 // processing
 type Server struct {
-	store  db.Store
-	router *gin.Engine
-	config config.Config
+	store      db.Store
+	router     *gin.Engine
+	tokenMaker token.Maker
+	config     config.Config
 }
 
 // create a new server instance
 func NewServer(config config.Config, store db.Store) (*Server, error) {
+	// either create a PASETO OR JWT token maker
+	tokenMaker, err := token.NewPasetoMaker(config.TokenSymmetricKey)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create token maker: %w", err)
+	}
+
 	server := &Server{
-		config: config,
-		store:  store,
+		config:     config,
+		store:      store,
+		tokenMaker: tokenMaker,
 	}
 
 	server.setupRouter()
@@ -49,6 +58,7 @@ func (server *Server) setupRouter() {
 
 	// user routes
 	router.POST("/users", server.createUser)
+	router.POST("users/login", server.loginUser)
 
 	// creating the post request to create a blog
 	router.POST("/blogs", server.createBlog)

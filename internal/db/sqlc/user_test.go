@@ -70,6 +70,34 @@ func TestGetNonExistentUser(t *testing.T) {
 	require.EqualError(t, err, pgx.ErrNoRows.Error())
 }
 
+// test get user with username
+func TestGetUserByUsername(t *testing.T) {
+	user1 := createRandomUser(t)
+
+	user2, err := testQueries.GetUserByUsername(context.Background(), user1.Username)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, user2)
+
+	require.Equal(t, user1.ID, user2.ID)
+	require.Equal(t, user1.Username, user2.Username)
+	require.Equal(t, user1.HashedPassword, user2.HashedPassword)
+	require.Equal(t, user1.Email, user2.Email)
+	require.Equal(t, user1.FullName, user2.FullName)
+	require.Equal(t, user1.IsEmailVerified, user2.IsEmailVerified)
+
+	// Check if timestamps are within 1 second of each other
+	require.WithinDuration(t, user1.CreatedAt, user2.CreatedAt, time.Second)
+	require.WithinDuration(t, user1.PasswordChangedAt, user2.PasswordChangedAt, time.Second)
+	require.WithinDuration(t, user1.UpdatedAt, user2.UpdatedAt, time.Second)
+
+	// Test for non-existent username
+	nonExistentUser, err := testQueries.GetUserByUsername(context.Background(), "nonexistentuser")
+	require.Error(t, err)
+	require.EqualError(t, err, pgx.ErrNoRows.Error())
+	require.Empty(t, nonExistentUser)
+}
+
 // Test Update User
 func TestUpdateUser(t *testing.T) {
 	user1 := createRandomUser(t)
