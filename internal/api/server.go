@@ -47,6 +47,9 @@ func NewServer(config config.Config, store db.Store) (*Server, error) {
 func (server *Server) setupRouter() {
 	router := gin.Default()
 
+	// user routes
+	router.POST("/users", server.createUser)
+
 	// creating the post request to create a blog
 	router.POST("/blogs", server.createBlog)
 	router.GET("/blogs/:id", server.getBlogByID)
