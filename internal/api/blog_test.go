@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -16,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	mockdb "github.com/teamkweku/code-odessey/internal/db/mock"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"
+	"github.com/teamkweku/code-odessey/internal/token"
 	"github.com/teamkweku/code-odessey/pkg/utils"
 	"go.uber.org/mock/gomock"
 )
@@ -126,11 +128,13 @@ func TestGetBlogAPI(t *testing.T) {
 
 // Testing CreateBlog API route
 func TestCreateBlogAPI(t *testing.T) {
+	user, _ := randomUser(t)
 	blog := randomBlog()
 
 	testCases := []struct {
 		name          string
 		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
@@ -142,6 +146,9 @@ func TestCreateBlogAPI(t *testing.T) {
 				"description":  blog.Description,
 				"body":         blog.Body,
 				"banner_image": blog.BannerImage,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateBlogParams{
@@ -165,6 +172,9 @@ func TestCreateBlogAPI(t *testing.T) {
 		{
 			name: "InvalidRequest",
 			body: gin.H{},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateBlog(gomock.Any(), gomock.Any()).
@@ -183,6 +193,9 @@ func TestCreateBlogAPI(t *testing.T) {
 				"body":         blog.Body,
 				"banner_image": blog.BannerImage,
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateBlog(gomock.Any(), gomock.Any()).
@@ -191,6 +204,27 @@ func TestCreateBlogAPI(t *testing.T) {
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
+			},
+		},
+		{
+			name: "NoAuthorization",
+			body: gin.H{
+				"title":        blog.Title,
+				"slug":         blog.Slug,
+				"description":  blog.Description,
+				"body":         blog.Body,
+				"banner_image": blog.BannerImage,
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				// No authorization added
+			},
+			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					CreateBlog(gomock.Any(), gomock.Any()).
+					Times(0)
+			},
+			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
+				require.Equal(t, http.StatusUnauthorized, recorder.Code)
 			},
 		},
 	}
@@ -215,6 +249,7 @@ func TestCreateBlogAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
 		})
@@ -343,12 +378,14 @@ func TestListBlogsAPI(t *testing.T) {
 
 // test update API
 func TestUpdateBlogAPI(t *testing.T) {
+	user, _ := randomUser(t)
 	blog := randomBlog()
 
 	testCases := []struct {
 		name          string
 		blogID        uuid.UUID
 		body          gin.H
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
@@ -361,6 +398,9 @@ func TestUpdateBlogAPI(t *testing.T) {
 				"description":  "updated description",
 				"body":         "updated body",
 				"banner_image": "https://example.com/updated-image.jpg",
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateBlogParams{
@@ -407,6 +447,9 @@ func TestUpdateBlogAPI(t *testing.T) {
 				"body":        "updated body",
 				"bannerImage": "updated-banner-image-url",
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				// build stubs
 				store.EXPECT().
@@ -425,6 +468,9 @@ func TestUpdateBlogAPI(t *testing.T) {
 			body: gin.H{
 				"title": "updated title",
 			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					UpdateBlog(gomock.Any(), gomock.Any()).
@@ -439,29 +485,13 @@ func TestUpdateBlogAPI(t *testing.T) {
 			name:   "EmptyJSONBody",
 			blogID: blog.ID,
 			body:   gin.H{},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateBlogParams{
 					ID: blog.ID,
 					// empty json body
-				}
-
-				store.EXPECT().
-					UpdateBlog(gomock.Any(), gomock.Eq(arg)).
-					Times(1).
-					Return(blog, nil)
-			},
-			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusOK, recorder.Code)
-				requireBodyMatchBlog(t, recorder.Body, blog)
-			},
-		},
-		{
-			name:   "EmptyJSONBody",
-			blogID: blog.ID,
-			body:   gin.H{},
-			buildStubs: func(store *mockdb.MockStore) {
-				arg := db.UpdateBlogParams{
-					ID: blog.ID,
 				}
 
 				store.EXPECT().
@@ -480,6 +510,9 @@ func TestUpdateBlogAPI(t *testing.T) {
 			body: gin.H{
 				"title":       "updated title",
 				"description": "updated description",
+			},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.UpdateBlogParams{
@@ -542,6 +575,7 @@ func TestUpdateBlogAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodPut, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
 		})
@@ -549,17 +583,22 @@ func TestUpdateBlogAPI(t *testing.T) {
 }
 
 func TestDeleteBlogAPI(t *testing.T) {
+	user, _ := randomUser(t)
 	blog := randomBlog()
 
 	testCases := []struct {
 		name          string
 		blogID        uuid.UUID
+		setupAuth     func(t *testing.T, request *http.Request, tokenMaker token.Maker)
 		buildStubs    func(store *mockdb.MockStore)
 		checkResponse func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name:   "OK",
 			blogID: blog.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.DeleteBlogTxParams{
 					ID: blog.ID,
@@ -581,6 +620,9 @@ func TestDeleteBlogAPI(t *testing.T) {
 		{
 			name:   "NotFound",
 			blogID: blog.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				// build stubs
 				store.EXPECT().
@@ -596,6 +638,9 @@ func TestDeleteBlogAPI(t *testing.T) {
 		{
 			name:   "InvalidUUID",
 			blogID: uuid.UUID{},
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteBlogTx(gomock.Any(), gomock.Any()).
@@ -608,6 +653,9 @@ func TestDeleteBlogAPI(t *testing.T) {
 		{
 			name:   "InternalError",
 			blogID: blog.ID,
+			setupAuth: func(t *testing.T, request *http.Request, tokenMaker token.Maker) {
+				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
+			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					DeleteBlogTx(gomock.Any(), gomock.Any()).
@@ -637,6 +685,7 @@ func TestDeleteBlogAPI(t *testing.T) {
 			request, err := http.NewRequest(http.MethodDelete, url, nil)
 			require.NoError(t, err)
 
+			tc.setupAuth(t, request, server.tokenMaker)
 			server.router.ServeHTTP(recorder, request)
 			tc.checkResponse(t, recorder)
 		})

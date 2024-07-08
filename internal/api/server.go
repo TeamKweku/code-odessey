@@ -60,24 +60,28 @@ func (server *Server) setupRouter() {
 	router.POST("/users", server.createUser)
 	router.POST("users/login", server.loginUser)
 
-	// creating the post request to create a blog
-	router.POST("/blogs", server.createBlog)
-	router.GET("/blogs/:id", server.getBlogByID)
 	router.GET("/blogs", server.listBlogs)
-	router.PUT("/blogs/:id", server.updateBlog)
-	router.DELETE("/blogs/:id", server.deleteBlog)
+	router.GET("/blogs/:id", server.getBlogByID)
+
+	// adding a routes group
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+
+	authRoutes.POST("/blogs", server.createBlog)
+
+	authRoutes.PUT("/blogs/:id", server.updateBlog)
+	authRoutes.DELETE("/blogs/:id", server.deleteBlog)
 
 	// Listing comments for a specific blog
-	router.GET("/blogs/:id/comments", server.listCommentsbyBlogID)
+	authRoutes.GET("/blogs/:id/comments", server.listCommentsbyBlogID)
 
 	// update comment of a specific blog id
-	router.PUT("/blogs/:id/comments/:comment_id", server.updateCommentByBlogID)
+	authRoutes.PUT("/blogs/:id/comments/:comment_id", server.updateCommentByBlogID)
 
-	router.DELETE("/blogs/:id/comments/:comment_id", server.deleteCommentByBlogID)
+	authRoutes.DELETE("/blogs/:id/comments/:comment_id", server.deleteCommentByBlogID)
 
 	// creating comments
-	router.POST("/comments", server.createComment)
-	router.GET("/comments/:id", server.getCommentByID)
+	authRoutes.POST("/comments", server.createComment)
+	authRoutes.GET("/comments/:id", server.getCommentByID)
 
 	server.router = router
 }
