@@ -13,6 +13,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/lib/pq"
+	// "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 	mockdb "github.com/teamkweku/code-odessey/internal/db/mock"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"

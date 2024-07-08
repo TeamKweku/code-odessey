@@ -3,12 +3,16 @@ module github.com/teamkweku/code-odessey
 go 1.22.4
 
 require (
+	github.com/aead/chacha20poly1305 v0.0.0-20201124145622-1a5aba2a8b29
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/google/uuid v1.4.0
 	github.com/jackc/pgx v3.6.2+incompatible
 	github.com/jackc/pgx/v5 v5.6.0
+	github.com/lib/pq v1.10.9
+	github.com/o1egl/paseto v1.0.0
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
@@ -17,6 +21,8 @@ require (
 )
 
 require (
+	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
+	github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635 // indirect
 	github.com/bytedance/sonic v1.11.9 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
@@ -38,7 +44,6 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
-	github.com/lib/pq v1.10.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
