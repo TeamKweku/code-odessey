@@ -160,6 +160,11 @@ func TestCreateBlogAPI(t *testing.T) {
 				}
 
 				store.EXPECT().
+					GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(user, nil)
+
+				store.EXPECT().
 					CreateBlog(gomock.Any(), gomock.Eq(arg)).
 					Times(1).
 					Return(blog, nil)
@@ -197,6 +202,11 @@ func TestCreateBlogAPI(t *testing.T) {
 				addAuthorization(t, request, tokenMaker, authorizationTypeBearer, user.Username, time.Minute)
 			},
 			buildStubs: func(store *mockdb.MockStore) {
+				store.EXPECT().
+					GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).
+					Times(1).
+					Return(user, nil)
+
 				store.EXPECT().
 					CreateBlog(gomock.Any(), gomock.Any()).
 					Times(1).

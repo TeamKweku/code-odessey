@@ -10,9 +10,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"
+	"github.com/teamkweku/code-odessey/internal/token"
 )
 
-type createAccountRequest struct {
+type createBlogRequest struct {
 	Title       string `json:"title" binding:"required"`
 	Slug        string `json:"slug" binding:"required"`
 	Description string `json:"description" binding:"required"`
@@ -21,7 +22,7 @@ type createAccountRequest struct {
 }
 
 func (server *Server) createBlog(ctx *gin.Context) {
-	var req createAccountRequest
+	var req createBlogRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		if err == io.EOF {
 			ctx.JSON(http.StatusBadRequest, errorResponse(errors.New("request body is empty")))
@@ -31,7 +32,16 @@ func (server *Server) createBlog(ctx *gin.Context) {
 		return
 	}
 
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+
+	user, err := server.store.GetUserByUsername(ctx, authPayload.Username)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, errorResponse(errors.New("user not found")))
+		return
+	}
+
 	arg := db.CreateBlogParams{
+		AuthorID:    user.ID,
 		Title:       req.Title,
 		Slug:        req.Slug,
 		Description: req.Description,
