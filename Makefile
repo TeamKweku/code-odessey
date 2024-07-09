@@ -59,5 +59,14 @@ db_docs:
 db_schema:
 	dbml2sql --postgres -o docs/schema.sql docs/db.dbml
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1 down up build db_docs db_schema
+protolint:
+	protolint lint --fix internal/proto/
 
+proto:
+	rm -f pb/*.go
+	protoc --proto_path=internal/proto --go_out=internal/pb --go_opt=paths=source_relative \
+    --go-grpc_out=internal/pb --go-grpc_opt=paths=source_relative \
+    internal/proto/*.proto
+
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1 down up build db_docs db_schema protolint proto
