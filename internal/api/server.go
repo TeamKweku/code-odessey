@@ -59,6 +59,7 @@ func (server *Server) setupRouter() {
 	// user routes
 	router.POST("/users", server.createUser)
 	router.POST("users/login", server.loginUser)
+	router.POST("/tokens/renew_access", server.renewAccessToken)
 
 	router.GET("/blogs", server.listBlogs)
 	router.GET("/blogs/:id", server.getBlogByID)

@@ -54,3 +54,4 @@ mock:
 	mockgen -package mockdb -destination internal/db/mock/store.go github.com/teamkweku/code-odessey/internal/db/sqlc Store 
 
 .PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1 down up build
+
