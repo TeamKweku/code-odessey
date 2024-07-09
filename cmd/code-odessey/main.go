@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"net"
+	"net/http"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -42,6 +44,9 @@ func main() {
 	runDBMigration(config.MigrationURL, config.DBSource)
 
 	store := db.NewStore(connPool)
+
+	// running gRPC api gateway concurrently with gRPC server
+	go runGatewayServer(config, store)
 
 	// Start the gRPCServer
 	runGrpcServer(config, store)
@@ -90,6 +95,41 @@ func runGrpcServer(config config.Config, store db.Store) {
 	if err != nil {
 		log.Fatal().Msg("cannot start gRPC server")
 	}
+}
+
+// setting up gRPC gateway server using the inprocess translation
+// method
+func runGatewayServer(config config.Config, store db.Store) {
+	server, err := gapi.NewServer(config, store)
+	if err != nil {
+		log.Fatal().Msg("cannot create server")
+	}
+
+	grpcMux := runtime.NewServeMux()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	pb.RegisterCodeOdesseyHandlerServer(ctx, grpcMux, server)
+	if err != nil {
+		log.Fatal().Msg("cannot register handler server")
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", grpcMux)
+
+	listener, err := net.Listen("tcp", config.HTTPServerAddress)
+	if err != nil {
+		log.Fatal().Msg("cannot create listener")
+	}
+
+	log.Info().Msgf("start HTTP gateway server at %s", listener.Addr().String())
+	handler := gapi.HttpLogger(mux)
+	err = http.Serve(listener, handler)
+	if err != nil {
+		log.Fatal().Msg("cannot start HTTP gateway server")
+	}
+
 }
 
 // function to start a gin server
