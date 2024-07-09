@@ -15,6 +15,7 @@ type Querier interface {
 	CreateBlog(ctx context.Context, arg CreateBlogParams) (Blog, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreateFavorite(ctx context.Context, arg CreateFavoriteParams) (Favorite, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteBlog(ctx context.Context, id uuid.UUID) error
 	DeleteComment(ctx context.Context, id uuid.UUID) error
@@ -26,6 +27,7 @@ type Querier interface {
 	GetBlogBySlug(ctx context.Context, slug string) (Blog, error)
 	GetComment(ctx context.Context, id uuid.UUID) (Comment, error)
 	GetFavorite(ctx context.Context, id uuid.UUID) (Favorite, error)
+	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
 	GetUser(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
 	ListBlogs(ctx context.Context, arg ListBlogsParams) ([]Blog, error)
