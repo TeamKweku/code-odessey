@@ -41,7 +41,16 @@ coverage:
 server:
 	go run cmd/code-odessey/main.go 
 
-mock:
-	mockgen -package mockdb -destination internal/db/mock/store.go github.com/teamkweku/code-odessey/internal/db/sqlc Store
+build:
+	docker compose -f docker/docker-compose.yaml up --build --remove-orphans
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1
+up:
+	docker compose -f docker/docker-compose.yaml up
+
+down:
+	docker compose -f docker/docker-compose.yaml down
+
+mock:
+	mockgen -package mockdb -destination internal/db/mock/store.go github.com/teamkweku/code-odessey/internal/db/sqlc Store 
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1 down up build
