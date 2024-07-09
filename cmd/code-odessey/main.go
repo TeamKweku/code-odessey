@@ -5,16 +5,21 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/rakyll/statik/fs"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	_ "github.com/teamkweku/code-odessey/docs/statik"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/teamkweku/code-odessey/config"
 	"github.com/teamkweku/code-odessey/internal/api"
@@ -105,7 +110,16 @@ func runGatewayServer(config config.Config, store db.Store) {
 		log.Fatal().Msg("cannot create server")
 	}
 
-	grpcMux := runtime.NewServeMux()
+	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	})
+
+	grpcMux := runtime.NewServeMux(jsonOption)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -117,6 +131,40 @@ func runGatewayServer(config config.Config, store db.Store) {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", grpcMux)
+
+	// serving static files (swagger dist files)
+	statikFS, err := fs.New()
+	if err != nil {
+		log.Fatal().Err(err).Msg("cannot create statik fs")
+	}
+
+	mux.HandleFunc("/swagger/", func(w http.ResponseWriter, r *http.Request) {
+		log.Info().Msgf("Received request for: %s", r.URL.Path)
+
+		// If the path is /swagger/ or /swagger, serve index.html
+		if r.URL.Path == "/swagger/" || r.URL.Path == "/swagger" {
+			content, err := statikFS.Open("/index.html")
+			if err != nil {
+				log.Error().Err(err).Msg("Failed to open index.html")
+				http.NotFound(w, r)
+				return
+			}
+			defer content.Close()
+			http.ServeContent(w, r, "index.html", time.Now(), content)
+			return
+		}
+
+		// For other files, try to serve them directly
+		path := strings.TrimPrefix(r.URL.Path, "/swagger")
+		content, err := statikFS.Open(path)
+		if err != nil {
+			log.Error().Err(err).Msgf("Failed to open file: %s", path)
+			http.NotFound(w, r)
+			return
+		}
+		defer content.Close()
+		http.ServeContent(w, r, path, time.Now(), content)
+	})
 
 	listener, err := net.Listen("tcp", config.HTTPServerAddress)
 	if err != nil {
