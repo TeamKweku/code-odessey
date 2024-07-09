@@ -68,5 +68,7 @@ proto:
     --go-grpc_out=internal/pb --go-grpc_opt=paths=source_relative \
     internal/proto/*.proto
 
+evans:
+	evans --host localhost --port 8085 -r repl
 
-.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1 down up build db_docs db_schema protolint proto
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc tidy test mock migrateup1 migratedown1 down up build db_docs db_schema protolint proto evans

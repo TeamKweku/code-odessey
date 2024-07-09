@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"os"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -10,10 +11,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	"github.com/teamkweku/code-odessey/config"
 	"github.com/teamkweku/code-odessey/internal/api"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"
+	"github.com/teamkweku/code-odessey/internal/gapi"
+	"github.com/teamkweku/code-odessey/internal/pb"
 )
 
 func main() {
@@ -38,8 +43,8 @@ func main() {
 
 	store := db.NewStore(connPool)
 
-	// Start the GinServer
-	runGinServer(config, store)
+	// Start the gRPCServer
+	runGrpcServer(config, store)
 }
 
 // running db migration on main file execution
@@ -56,6 +61,38 @@ func runDBMigration(migrationURL string, dbSource string) {
 	log.Info().Msg("db migrated successfully")
 }
 
+// Function to start gRPC server
+func runGrpcServer(config config.Config, store db.Store) {
+	// create new gapi server
+	server, err := gapi.NewServer(config, store)
+	if err != nil {
+		log.Fatal().Msg("cannot create server")
+	}
+
+	// create a new gRPC server, with logger
+	grpcServer := grpc.NewServer()
+
+	pb.RegisterCodeOdesseyServer(grpcServer, server)
+
+	// register a gRPC reflection to enable client to know
+	// which grpc service are available on server and call them
+	reflection.Register(grpcServer)
+
+	// creating the server to serve gRPC
+	listener, err := net.Listen("tcp", config.GRPCServerAddress)
+	if err != nil {
+		log.Fatal().Msg("cannot create listener")
+	}
+
+	log.Info().Msgf("start gRPC server at %s", listener.Addr().String())
+
+	err = grpcServer.Serve(listener)
+	if err != nil {
+		log.Fatal().Msg("cannot start gRPC server")
+	}
+}
+
+// function to start a gin server
 func runGinServer(config config.Config, store db.Store) {
 	server, err := api.NewServer(config, store)
 	if err != nil {
