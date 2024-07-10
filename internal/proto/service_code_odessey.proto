@@ -14,7 +14,7 @@ option go_package = "github.com/TeamKweku/code_odessey/internal/pb";
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
     title: "Code Odessey API";
-    version: "1.1";
+    version: "1.2";
     contact: {
       name: "TeamKweku";
       url: "https://github.com/TeamKweku";
@@ -53,4 +53,5 @@ service CodeOdessey {
             summary: "Login user";
         };
   }
+ 
 }
