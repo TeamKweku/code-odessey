@@ -124,10 +124,6 @@ func TestUpdateUser(t *testing.T) {
 			Bool:  true,
 			Valid: true,
 		},
-		PasswordChangedAt: pgtype.Timestamp{
-			Time:  time.Now(),
-			Valid: true,
-		},
 	}
 
 	updatedUser, err := testQueries.UpdateUser(context.Background(), arg)
@@ -140,7 +136,11 @@ func TestUpdateUser(t *testing.T) {
 	require.Equal(t, arg.Email.String, updatedUser.Email)
 	require.Equal(t, arg.HashedPassword.String, updatedUser.HashedPassword)
 	require.Equal(t, arg.IsEmailVerified.Bool, updatedUser.IsEmailVerified)
-	require.WithinDuration(t, arg.PasswordChangedAt.Time, updatedUser.PasswordChangedAt, time.Second)
+
+	// check autogen
+	require.True(t, updatedUser.PasswordChangedAt.After(user1.PasswordChangedAt))
+	require.WithinDuration(t, time.Now(), updatedUser.PasswordChangedAt, 2*time.Second)
+
 	require.WithinDuration(t, user1.CreatedAt, updatedUser.CreatedAt, time.Second)
 	require.NotEqual(t, user1.UpdatedAt, updatedUser.UpdatedAt)
 }

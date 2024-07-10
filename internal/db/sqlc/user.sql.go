@@ -104,20 +104,22 @@ SET
   email = COALESCE($3, email),
   is_email_verified = COALESCE($4, is_email_verified),
   hashed_password = COALESCE($5, hashed_password),
-  password_changed_at = COALESCE($6, password_changed_at)
+  password_changed_at = CASE 
+    WHEN $5 IS NOT NULL THEN NOW()
+    ELSE password_changed_at
+  END 
 WHERE 
-  id = $7
+  id = $6
 RETURNING id, username, hashed_password, full_name, email, is_email_verified, password_changed_at, created_at, updated_at
 `
 
 type UpdateUserParams struct {
-	Username          pgtype.Text      `json:"username"`
-	FullName          pgtype.Text      `json:"full_name"`
-	Email             pgtype.Text      `json:"email"`
-	IsEmailVerified   pgtype.Bool      `json:"is_email_verified"`
-	HashedPassword    pgtype.Text      `json:"hashed_password"`
-	PasswordChangedAt pgtype.Timestamp `json:"password_changed_at"`
-	ID                uuid.UUID        `json:"id"`
+	Username        pgtype.Text `json:"username"`
+	FullName        pgtype.Text `json:"full_name"`
+	Email           pgtype.Text `json:"email"`
+	IsEmailVerified pgtype.Bool `json:"is_email_verified"`
+	HashedPassword  pgtype.Text `json:"hashed_password"`
+	ID              uuid.UUID   `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
@@ -127,7 +129,6 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		arg.Email,
 		arg.IsEmailVerified,
 		arg.HashedPassword,
-		arg.PasswordChangedAt,
 		arg.ID,
 	)
 	var i User
