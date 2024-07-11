@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pb;
+
+import "user.proto";
+
+option go_package = "github.com/TeamKweku/code_odessey/internal/pb";
+
+message UpdateUserRequest {
+  string id = 1;
+  optional string username = 2;
+  optional string full_name = 3;
+  optional string email = 4;
+  optional string password = 5;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}

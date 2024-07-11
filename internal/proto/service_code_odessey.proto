@@ -7,6 +7,7 @@ import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 import "rpc_create_user.proto";
 import "rpc_login_user.proto";
+import "rpc_update_user.proto";
 
 
 option go_package = "github.com/TeamKweku/code_odessey/internal/pb";
@@ -43,6 +44,14 @@ service CodeOdessey {
             summary: "Create new user";
         };
   }
+
+  rpc UpdateUser (UpdateUserRequest) returns (UpdateUserResponse) {
+    option (google.api.http) = {
+            patch: "/v1/update_user/{id}"
+            body: "*"
+        };
+  }
+
   rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {
     option (google.api.http) = {
             post: "/v1/login_user"
