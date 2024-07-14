@@ -3,9 +3,7 @@ package gapi
 import (
 	"context"
 	"errors"
-	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"
 	"github.com/teamkweku/code-odessey/internal/pb"
@@ -31,26 +29,28 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 	if err != nil {
 		return nil, unauthenticatedError(err)
 	}
-	fmt.Printf("Authorized user: %s\n", authPayload.Username)
-
-	if authUser.ID.String() != req.GetId() {
-		return nil, status.Error(codes.PermissionDenied, "cannot update other user's info")
-	}
 
 	arg := db.UpdateUserParams{
-		ID: uuid.MustParse(req.GetId()),
-		Username: pgtype.Text{
+		ID: authUser.ID,
+	}
+
+	if req.Username != nil {
+		arg.Username = pgtype.Text{
 			String: req.GetUsername(),
-			Valid:  req.Username != nil,
-		},
-		FullName: pgtype.Text{
+			Valid:  true,
+		}
+	}
+	if req.FullName != nil {
+		arg.FullName = pgtype.Text{
 			String: req.GetFullName(),
-			Valid:  req.FullName != nil,
-		},
-		Email: pgtype.Text{
+			Valid:  true,
+		}
+	}
+	if req.Email != nil {
+		arg.Email = pgtype.Text{
 			String: req.GetEmail(),
-			Valid:  req.Email != nil,
-		},
+			Valid:  true,
+		}
 	}
 
 	if req.Password != nil {
@@ -80,8 +80,10 @@ func (server *Server) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest)
 }
 
 func validateUpdateUserRequest(req *pb.UpdateUserRequest) (violations []*errdetails.BadRequest_FieldViolation) {
-	if err := val.ValidateUsername(req.GetUsername()); err != nil {
-		violations = append(violations, fieldViolation("username", err))
+	if req.Username != nil {
+		if err := val.ValidateUsername(req.GetUsername()); err != nil {
+			violations = append(violations, fieldViolation("username", err))
+		}
 	}
 
 	if req.Password != nil {

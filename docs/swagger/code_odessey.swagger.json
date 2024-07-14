@@ -94,7 +94,7 @@
         ]
       }
     },
-    "/v1/update_user/{id}": {
+    "/v1/update_user": {
       "patch": {
         "operationId": "CodeOdessey_UpdateUser",
         "responses": {
@@ -113,17 +113,11 @@
         },
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
             "name": "body",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/CodeOdesseyUpdateUserBody"
+              "$ref": "#/definitions/pbUpdateUserRequest"
             }
           }
         ],
@@ -134,23 +128,6 @@
     }
   },
   "definitions": {
-    "CodeOdesseyUpdateUserBody": {
-      "type": "object",
-      "properties": {
-        "username": {
-          "type": "string"
-        },
-        "fullName": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "password": {
-          "type": "string"
-        }
-      }
-    },
     "pbCreateUserRequest": {
       "type": "object",
       "properties": {
@@ -209,6 +186,26 @@
         "refreshTokenExpiresAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "pbUpdateUserRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "fullName": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
         }
       }
     },
