@@ -79,8 +79,11 @@ func runGrpcServer(config config.Config, store db.Store) {
 		log.Fatal().Msg("cannot create server")
 	}
 
+	// creating a gRPC logger using interceptors
+	grpcLogger := grpc.UnaryInterceptor(gapi.GrpcLogger)
+
 	// create a new gRPC server, with logger
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(grpcLogger)
 
 	pb.RegisterCodeOdesseyServer(grpcServer, server)
 
