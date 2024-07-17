@@ -23,6 +23,16 @@ Table users as U {
   }
 }
 
+Table verify_emails {
+  id uuid [pk, default: `uuid_generate_v4()`]
+  user_id uuid [not null, ref: > U.id]
+  email varchar [not null]
+  secret_code varchar [not null]
+  is_used bool [not null, default: false]
+  created_at timestampz [not null, default: `now()`]
+  expires_at timestamptz [not null, default: `now() + interval '15 minutes'`]
+}
+
 Table blog as B {
   id uuid [pk, default: `uuid_generate_v4()`]
   author_id uuid [not null, ref: > U.id]

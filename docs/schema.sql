@@ -1,6 +1,6 @@
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2024-07-09T08:08:28.322Z
+-- Generated at: 2024-07-17T22:11:51.387Z
 
 CREATE TABLE "users" (
   "id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
@@ -12,6 +12,16 @@ CREATE TABLE "users" (
   "password_changed_at" timestampz NOT NULL DEFAULT '0001-01-01 00:00:00Z',
   "created_at" timestampz NOT NULL DEFAULT (now()),
   "updated_at" timestamptz NOT NULL DEFAULT '0001-01-01 00:00:00Z'
+);
+
+CREATE TABLE "verify_emails" (
+  "id" uuid PRIMARY KEY DEFAULT (uuid_generate_v4()),
+  "user_id" uuid NOT NULL,
+  "email" varchar NOT NULL,
+  "secret_code" varchar NOT NULL,
+  "is_used" bool NOT NULL DEFAULT false,
+  "created_at" timestampz NOT NULL DEFAULT (now()),
+  "expires_at" timestamptz NOT NULL DEFAULT (now() + interval '15 minutes')
 );
 
 CREATE TABLE "blog" (
@@ -70,6 +80,8 @@ CREATE INDEX ON "comment" ("blog_id", "created_at");
 CREATE INDEX ON "favorite" ("blog_id", "user_id");
 
 CREATE INDEX ON "sessions" ("user_id");
+
+ALTER TABLE "verify_emails" ADD FOREIGN KEY ("user_id") REFERENCES "users" ("id");
 
 ALTER TABLE "blog" ADD FOREIGN KEY ("author_id") REFERENCES "users" ("id");
 
