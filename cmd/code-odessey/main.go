@@ -12,6 +12,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/hibiken/asynq"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rakyll/statik/fs"
 	"github.com/rs/zerolog"
@@ -25,7 +26,9 @@ import (
 	"github.com/teamkweku/code-odessey/internal/api"
 	db "github.com/teamkweku/code-odessey/internal/db/sqlc"
 	"github.com/teamkweku/code-odessey/internal/gapi"
+	"github.com/teamkweku/code-odessey/internal/mail"
 	"github.com/teamkweku/code-odessey/internal/pb"
+	"github.com/teamkweku/code-odessey/internal/worker"
 )
 
 func main() {
@@ -50,11 +53,21 @@ func main() {
 
 	store := db.NewStore(connPool)
 
+	// connecting to Redis
+	redisOpt := asynq.RedisClientOpt{
+		Addr: config.RedisAddress,
+	}
+
+	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
+
+	// run task processor
+	go runTaskProcessor(config, &redisOpt, store)
+
 	// running gRPC api gateway concurrently with gRPC server
-	go runGatewayServer(config, store)
+	go runGatewayServer(config, store, taskDistributor)
 
 	// Start the gRPCServer
-	runGrpcServer(config, store)
+	runGrpcServer(config, store, taskDistributor)
 }
 
 // running db migration on main file execution
@@ -71,10 +84,21 @@ func runDBMigration(migrationURL string, dbSource string) {
 	log.Info().Msg("db migrated successfully")
 }
 
+// send verification email
+func runTaskProcessor(config config.Config, redisOpt *asynq.RedisClientOpt, store db.Store) {
+	mailer := mail.NewGmailSender(config.EmailSenderName, config.EmailSenderAddress, config.EmailSenderPassword)
+	taskProcessor := worker.NewRedisTaskProcessor(*redisOpt, store, mailer)
+	log.Info().Msg("start task processor")
+	err := taskProcessor.Start()
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to start task processor")
+	}
+}
+
 // Function to start gRPC server
-func runGrpcServer(config config.Config, store db.Store) {
+func runGrpcServer(config config.Config, store db.Store, taskDistributor worker.TaskDistributor) {
 	// create new gapi server
-	server, err := gapi.NewServer(config, store)
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("cannot create server")
 	}
@@ -107,8 +131,8 @@ func runGrpcServer(config config.Config, store db.Store) {
 
 // setting up gRPC gateway server using the inprocess translation
 // method
-func runGatewayServer(config config.Config, store db.Store) {
-	server, err := gapi.NewServer(config, store)
+func runGatewayServer(config config.Config, store db.Store, taskDistributor worker.TaskDistributor) {
+	server, err := gapi.NewServer(config, store, taskDistributor)
 	if err != nil {
 		log.Fatal().Msg("cannot create server")
 	}

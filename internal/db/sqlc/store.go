@@ -11,6 +11,7 @@ import (
 type Store interface {
 	Querier
 	DeleteBlogTx(ctx context.Context, arg DeleteBlogTxParams) (DeleteBlogTxResult, error)
+	CreateUserTx(ctx context.Context, arg CreateUserTxParams) (CreateUserTxResult, error)
 }
 
 // provides functionality for executing all SQL queries and transactions
