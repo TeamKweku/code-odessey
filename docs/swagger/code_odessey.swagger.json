@@ -125,6 +125,44 @@
           "CodeOdessey"
         ]
       }
+    },
+    "/v1/verify_email": {
+      "get": {
+        "summary": "Verify email",
+        "description": "API for verifying registered users email address",
+        "operationId": "CodeOdessey_VerifyEmail",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbVerifyEmailResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "emailId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "secretCode",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "CodeOdessey"
+        ]
+      }
     }
   },
   "definitions": {
@@ -192,9 +230,6 @@
     "pbUpdateUserRequest": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "string"
-        },
         "username": {
           "type": "string"
         },
@@ -239,6 +274,14 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        }
+      }
+    },
+    "pbVerifyEmailResponse": {
+      "type": "object",
+      "properties": {
+        "isVerified": {
+          "type": "boolean"
         }
       }
     },

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/mail"
 	"regexp"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -55,10 +57,16 @@ func ValidateEmail(value string) error {
 	return nil
 }
 
-func ValidateEmailId(value int64) error {
-	if value <= 0 {
-		return fmt.Errorf("must be a positive integer")
+func ValidateEmailId(value string) error {
+	if value == "" {
+		return fmt.Errorf("email_id cannot be empty")
 	}
+
+	_, err := uuid.Parse(value)
+	if err != nil {
+		return fmt.Errorf("invalid UUID format for email_id: %v", err)
+	}
+
 	return nil
 }
 

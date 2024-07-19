@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	"github.com/google/uuid"
 	"github.com/hibiken/asynq"
@@ -61,8 +62,9 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 
 	// Email content as a concatenated string
 	subject := "Welcome to Code Odessey"
-	verifyUrl := fmt.Sprintf("http://localhost:8080/v1/verify_email?email_id=%d&secret_code=%s",
-		verifyEmail.ID, verifyEmail.SecretCode)
+	verifyUrl := fmt.Sprintf("http://localhost:8080/v1/verify_email?email_id=%s&secret_code=%s",
+		url.QueryEscape(verifyEmail.ID.String()),
+		url.QueryEscape(verifyEmail.SecretCode))
 
 	content := fmt.Sprintf(`Hello %s,<br/>
 	Thank you for registering with us!<br/>
