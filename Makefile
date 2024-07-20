@@ -52,6 +52,7 @@ down:
 
 mock:
 	mockgen -package mockdb -destination internal/db/mock/store.go github.com/teamkweku/code-odessey/internal/db/sqlc Store 
+	mockgen -package mockwk -destination internal/worker/mock/distributor.go github.com/teamkweku/code-odessey/internal/worker TaskDistributor
 
 db_docs:
 	dbdocs build docs/db.dbml
